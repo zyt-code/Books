@@ -176,9 +176,32 @@ class EpubParser {
         if (coverHref == null) return null
 
         val fullPath = if (basePath.isNotEmpty()) "$basePath/$coverHref" else coverHref
-        val coverEntry = zipFile.getEntry(fullPath) ?: return null
+        var coverEntry = zipFile.getEntry(fullPath)
 
-        val coverFile = File(outputDir, "cover.jpg")
+        // If not found, try without basePath
+        if (coverEntry == null && basePath.isNotEmpty()) {
+            coverEntry = zipFile.getEntry(coverHref)
+        }
+
+        // If still not found, try to normalize the path
+        if (coverEntry == null) {
+            coverEntry = zipFile.getEntry(fullPath.replace("\\", "/"))
+        }
+
+        if (coverEntry == null) {
+            android.util.Log.e("EpubParser", "Cover image not found: $fullPath")
+            return null
+        }
+
+        // Determine file extension from the entry name
+        val extension = when {
+            coverEntry.name.endsWith(".png", ignoreCase = true) -> "png"
+            coverEntry.name.endsWith(".gif", ignoreCase = true) -> "gif"
+            coverEntry.name.endsWith(".webp", ignoreCase = true) -> "webp"
+            else -> "jpg"
+        }
+
+        val coverFile = File(outputDir, "cover.$extension")
         zipFile.getInputStream(coverEntry).use { input ->
             coverFile.outputStream().use { output ->
                 input.copyTo(output)
@@ -197,13 +220,35 @@ class EpubParser {
         contentDir.mkdirs()
 
         spineItems.forEachIndexed { index, item ->
-            val entry = zipFile.getEntry(item.href) ?: return@forEachIndexed
-            val outputFile = File(contentDir, "spine_$index.xhtml")
+            // Try to get the entry from EPUB zip
+            val entry = zipFile.getEntry(item.href)
 
-            zipFile.getInputStream(entry).use { input ->
-                outputFile.outputStream().use { output ->
-                    input.copyTo(output)
+            if (entry != null) {
+                val outputFile = File(contentDir, "spine_$index.xhtml")
+
+                zipFile.getInputStream(entry).use { input ->
+                    outputFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
                 }
+            } else {
+                // Log error or create placeholder
+                android.util.Log.e("EpubParser", "Spine item not found: ${item.href}")
+
+                // Create a placeholder file to prevent crashes
+                val outputFile = File(contentDir, "spine_$index.xhtml")
+                outputFile.writeText("""
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <html xmlns="http://www.w3.org/1999/xhtml">
+                    <head>
+                        <title>Chapter $index</title>
+                    </head>
+                    <body>
+                        <h1>内容加载失败</h1>
+                        <p>无法找到文件: ${item.href}</p>
+                    </body>
+                    </html>
+                """.trimIndent())
             }
         }
     }

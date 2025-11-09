@@ -57,6 +57,7 @@ fun ReaderScreen(
                 spineItem = currentSpineItem,
                 bookDir = bookDir,
                 userPreferences = uiState.userPreferences,
+                currentSpineIndex = uiState.currentSpineIndex,
                 onProgressUpdate = { offset ->
                     viewModel.onEvent(
                         ReaderEvent.UpdateProgress(uiState.currentSpineIndex, offset)

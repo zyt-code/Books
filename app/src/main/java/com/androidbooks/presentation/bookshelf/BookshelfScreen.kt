@@ -3,6 +3,7 @@ package com.androidbooks.presentation.bookshelf
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -144,24 +145,30 @@ fun BookCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(0.75f)
+            .height(280.dp)
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Book cover
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(book.coverPath?.let { File(it) })
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = book.title,
-                    contentScale = ContentScale.Crop,
+                // Book cover - increased height and use Fit instead of Crop
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
-                )
+                        .height(200.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(book.coverPath?.let { File(it) })
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = book.title,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
                 // Book info
                 Column(

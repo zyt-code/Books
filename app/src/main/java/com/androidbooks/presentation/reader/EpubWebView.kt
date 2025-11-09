@@ -19,7 +19,8 @@ fun EpubWebView(
     bookDir: File,
     userPreferences: UserPreferences,
     onProgressUpdate: (Float) -> Unit,
-    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier
+    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
+    currentSpineIndex: Int = 0
 ) {
     val context = LocalContext.current
     var webView by remember { mutableStateOf<WebView?>(null) }
@@ -30,10 +31,10 @@ fun EpubWebView(
         }
     }
 
-    LaunchedEffect(spineItem, userPreferences) {
+    LaunchedEffect(spineItem, userPreferences, currentSpineIndex) {
         webView?.let { web ->
             if (spineItem != null) {
-                loadSpineContent(web, spineItem, bookDir, context, userPreferences, onProgressUpdate)
+                loadSpineContent(web, spineItem, bookDir, context, userPreferences, onProgressUpdate, currentSpineIndex)
             }
         }
     }
@@ -70,14 +71,45 @@ private fun loadSpineContent(
     bookDir: File,
     context: Context,
     userPreferences: UserPreferences,
-    onProgressUpdate: (Float) -> Unit
+    onProgressUpdate: (Float) -> Unit,
+    currentSpineIndex: Int
 ) {
     val contentDir = File(bookDir, "content")
-    val spineIndex = spineItem.id.removePrefix("spine_").substringBefore(".").toIntOrNull() ?: 0
-    val htmlFile = File(contentDir, "spine_$spineIndex.xhtml")
+    val htmlFile = File(contentDir, "spine_$currentSpineIndex.xhtml")
 
-    if (!htmlFile.exists()) return
+    if (!htmlFile.exists()) {
+        // Try alternative file extensions
+        val alternativeFile = File(contentDir, "spine_$currentSpineIndex.html")
+        if (alternativeFile.exists()) {
+            loadHtmlFile(webView, alternativeFile, contentDir, userPreferences, onProgressUpdate)
+            return
+        }
 
+        // If file doesn't exist, show error message
+        val errorHtml = """
+            <html>
+            <head><meta charset="UTF-8"></head>
+            <body>
+                <h2>无法加载章节</h2>
+                <p>文件路径: ${htmlFile.absolutePath}</p>
+                <p>文件不存在</p>
+            </body>
+            </html>
+        """.trimIndent()
+        webView.loadData(errorHtml, "text/html; charset=UTF-8", "UTF-8")
+        return
+    }
+
+    loadHtmlFile(webView, htmlFile, contentDir, userPreferences, onProgressUpdate)
+}
+
+private fun loadHtmlFile(
+    webView: WebView,
+    htmlFile: File,
+    contentDir: File,
+    userPreferences: UserPreferences,
+    onProgressUpdate: (Float) -> Unit
+) {
     val htmlContent = htmlFile.readText()
     val styledHtml = injectStyles(htmlContent, userPreferences)
 
