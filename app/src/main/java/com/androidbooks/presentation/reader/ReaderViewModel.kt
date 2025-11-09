@@ -77,11 +77,12 @@ class ReaderViewModel @Inject constructor(
                         // Initialize preloader with chapter count
                         preloader?.initialize(epubBook.spineItems.size)
 
-                        // Load chapters with cache
-                        val chapterContents = loadChaptersWithCache(
-                            startIndex = bookEntity.progressSpineIndex,
+                        // Load chapters from cache (which now has content from parseEpub)
+                        val chapterContents = loadChaptersFromCache(
                             totalChapters = epubBook.spineItems.size
                         )
+
+                        android.util.Log.d("ReaderViewModel", "Loaded ${chapterContents.size} chapters from cache")
 
                         _uiState.update {
                             it.copy(
@@ -102,6 +103,7 @@ class ReaderViewModel @Inject constructor(
                         )
                     },
                     onFailure = { error ->
+                        android.util.Log.e("ReaderViewModel", "Failed to parse EPUB", error)
                         _uiState.update {
                             it.copy(
                                 error = error.message ?: "Failed to load book",
@@ -111,6 +113,7 @@ class ReaderViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                android.util.Log.e("ReaderViewModel", "Error loading book", e)
                 _uiState.update {
                     it.copy(
                         error = e.message ?: "Failed to load book",
@@ -122,37 +125,25 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
-     * Load chapters with cache manager
+     * Load all chapters from cache
      */
-    private suspend fun loadChaptersWithCache(
-        startIndex: Int,
+    private suspend fun loadChaptersFromCache(
         totalChapters: Int
-    ): List<ChapterContent> {
+    ): List<ChapterContent> = withContext(Dispatchers.IO) {
         val contents = mutableListOf<ChapterContent>()
 
-        // Load current and adjacent chapters first
-        val indicesToLoad = listOf(
-            startIndex - 1,
-            startIndex,
-            startIndex + 1
-        ).filter { it in 0 until totalChapters }
-
-        indicesToLoad.forEach { index ->
-            cacheManager?.getChapterContent(index)?.getOrNull()?.let {
-                contents.add(it)
-            }
-        }
-
-        // Load remaining chapters lazily
+        // Load all chapters from disk cache
         for (i in 0 until totalChapters) {
-            if (i !in indicesToLoad) {
-                cacheManager?.getChapterContent(i)?.getOrNull()?.let {
-                    contents.add(it)
-                }
+            val result = cacheManager?.getChapterContent(i)
+            result?.getOrNull()?.let { content ->
+                contents.add(content)
+                android.util.Log.d("ReaderViewModel", "Loaded chapter $i: ${content.html.length} chars")
+            } ?: run {
+                android.util.Log.e("ReaderViewModel", "Failed to load chapter $i")
             }
         }
 
-        return contents.sortedBy { it.index }
+        contents.sortedBy { it.index }
     }
 
     fun onEvent(event: ReaderEvent) {

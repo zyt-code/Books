@@ -61,6 +61,8 @@ class BookshelfViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             try {
+                android.util.Log.d("BookshelfViewModel", "Starting EPUB import from URI: $uri")
+
                 // Copy URI content to temp file
                 val tempFile = File(context.cacheDir, "temp_${System.currentTimeMillis()}.epub")
                 context.contentResolver.openInputStream(uri)?.use { input ->
@@ -69,15 +71,19 @@ class BookshelfViewModel @Inject constructor(
                     }
                 }
 
+                android.util.Log.d("BookshelfViewModel", "Copied to temp file: ${tempFile.absolutePath}, size: ${tempFile.length()} bytes")
+
                 val result = importEpubUseCase(tempFile)
 
                 tempFile.delete()
 
                 result.fold(
-                    onSuccess = {
+                    onSuccess = { bookId ->
+                        android.util.Log.d("BookshelfViewModel", "Successfully imported book with ID: $bookId")
                         _uiState.update { it.copy(isLoading = false, error = null) }
                     },
                     onFailure = { error ->
+                        android.util.Log.e("BookshelfViewModel", "Failed to import EPUB", error)
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -87,6 +93,7 @@ class BookshelfViewModel @Inject constructor(
                     }
                 )
             } catch (e: Exception) {
+                android.util.Log.e("BookshelfViewModel", "Exception during import", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
