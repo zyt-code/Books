@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
@@ -18,9 +19,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -117,10 +121,10 @@ fun BookGrid(
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 120.dp),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 16.dp),
+        columns = GridCells.Adaptive(minSize = 140.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
         modifier = modifier.fillMaxSize()
     ) {
         items(books, key = { it.id }) { book ->
@@ -142,84 +146,109 @@ fun BookCard(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    Card(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(280.dp)
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Book cover - increased height and use Fit instead of Crop
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(book.coverPath?.let { File(it) })
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = book.title,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                // Book info
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = book.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = book.author,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            // Menu button
+        // Book cover container with menu
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // Cover image with 2:3 aspect ratio
             Box(
                 modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(2f / 3f)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .clip(RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(book.coverPath?.let { File(it) })
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = book.title,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+
+            // Menu button (top-right corner)
+            IconButton(
+                onClick = { showMenu = true },
+                modifier = Modifier
                     .align(Alignment.TopEnd)
+                    .size(32.dp)
                     .padding(4.dp)
             ) {
-                IconButton(onClick = { showMenu = true }) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = "More options",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                Icon(
+                    Icons.Default.MoreVert,
+                    contentDescription = "More options",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
 
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.delete)) },
-                        onClick = {
-                            onDelete()
-                            showMenu = false
-                        }
-                    )
-                }
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.delete)) },
+                    onClick = {
+                        onDelete()
+                        showMenu = false
+                    }
+                )
             }
         }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Progress indicator (only show if reading progress > 0)
+        if (book.progressOffset > 0f) {
+            LinearProgressIndicator(
+                progress = { book.progressOffset },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+        } else {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // Book title - centered, 2 lines max
+        Text(
+            text = book.title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        // Author - gray small text, 1 line
+        Text(
+            text = book.author,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
