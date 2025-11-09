@@ -8,6 +8,9 @@
 .cxx
 local.properties
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # Gradle temp files
 gradle-temp.zip
 gradle-all-temp.zip
