@@ -1,6 +1,6 @@
 package com.androidbooks.presentation.reader
 
-import androidx.compose.foundation.background
+import android.view.ViewGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -61,9 +61,9 @@ fun PaginatedReader(
                             ViewGroup.LayoutParams.MATCH_PARENT
                         )
 
-                        // Configure ViewPager2
+                        // Configure ViewPager2 - reduce offscreen limit to 1
                         orientation = ViewPager2.ORIENTATION_HORIZONTAL
-                        offscreenPageLimit = 2 // Preload 2 pages on each side
+                        offscreenPageLimit = 1 // Reduced from 2 to avoid creating too many WebViews
 
                         // Create and set adapter
                         adapter = EpubPagerAdapter(
@@ -83,7 +83,7 @@ fun PaginatedReader(
                             }
                         })
 
-                        // Set initial position
+                        // Set initial position without animation
                         post {
                             setCurrentItem(currentChapterIndex, false)
                         }

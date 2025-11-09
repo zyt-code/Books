@@ -4,6 +4,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.androidbooks.data.epub.ChapterContent
 import com.androidbooks.data.local.datastore.UserPreferences
+import kotlinx.coroutines.*
 import java.io.File
 
 /**
@@ -17,6 +18,7 @@ class EpubPagerAdapter(
 ) : RecyclerView.Adapter<EpubPagerAdapter.ChapterViewHolder>() {
 
     private var chapters: List<ChapterContent> = emptyList()
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChapterViewHolder {
         val webView = PaginatedEpubWebView(parent.context).apply {
@@ -31,21 +33,31 @@ class EpubPagerAdapter(
     override fun onBindViewHolder(holder: ChapterViewHolder, position: Int) {
         val chapter = chapters.getOrNull(position) ?: return
 
-        holder.webView.loadChapterWithPagination(
-            htmlContent = chapter.html,
-            baseUrl = "file://${bookDir.absolutePath}/content/",
-            userPreferences = userPreferences
-        )
-
-        onChapterLoad(position)
+        // Delay loading slightly to avoid blocking main thread
+        scope.launch {
+            delay(50) // Small delay to let RecyclerView settle
+            if (holder.bindingAdapterPosition == position) {
+                holder.webView.loadChapterWithPagination(
+                    htmlContent = chapter.html,
+                    baseUrl = "file://${bookDir.absolutePath}/content/",
+                    userPreferences = userPreferences
+                )
+                onChapterLoad(position)
+            }
+        }
     }
 
     override fun getItemCount(): Int = chapters.size
 
     override fun onViewRecycled(holder: ChapterViewHolder) {
         super.onViewRecycled(holder)
-        // Don't destroy WebView, just clear content for reuse
-        holder.webView.loadUrl("about:blank")
+        // Clean up WebView content but don't destroy it
+        holder.webView.cleanup()
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        scope.cancel() // Cancel all pending loads
     }
 
     /**

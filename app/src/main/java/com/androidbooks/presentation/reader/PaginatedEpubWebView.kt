@@ -1,6 +1,8 @@
 package com.androidbooks.presentation.reader
 
 import android.content.Context
+import android.os.Build
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.androidbooks.data.local.datastore.UserPreferences
@@ -14,6 +16,8 @@ class PaginatedEpubWebView(context: Context) : WebView(context) {
     companion object {
         private const val TAG = "PaginatedEpubWebView"
     }
+
+    private var isContentLoaded = false
 
     init {
         configureSettings()
@@ -43,12 +47,21 @@ class PaginatedEpubWebView(context: Context) : WebView(context) {
             minimumFontSize = 1
 
             // Performance
-            setRenderPriority(RenderPriority.HIGH)
-            cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE // Use our cache system
+            setRenderPriority(WebSettings.RenderPriority.HIGH)
+            cacheMode = WebSettings.LOAD_NO_CACHE // Use our cache system
         }
 
-        // Enable hardware acceleration
-        setLayerType(LAYER_TYPE_HARDWARE, null)
+        // Try hardware acceleration, fallback to software if issues
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                setLayerType(LAYER_TYPE_HARDWARE, null)
+            } else {
+                setLayerType(LAYER_TYPE_SOFTWARE, null)
+            }
+        } catch (e: Exception) {
+            // Fallback to software rendering on error
+            setLayerType(LAYER_TYPE_SOFTWARE, null)
+        }
     }
 
     /**
@@ -59,6 +72,11 @@ class PaginatedEpubWebView(context: Context) : WebView(context) {
         baseUrl: String,
         userPreferences: UserPreferences
     ) {
+        if (isContentLoaded) {
+            // Clear previous content
+            loadUrl("about:blank")
+        }
+
         val styledHtml = injectPaginationStyles(htmlContent, userPreferences)
         loadDataWithBaseURL(
             baseUrl,
@@ -67,6 +85,7 @@ class PaginatedEpubWebView(context: Context) : WebView(context) {
             "UTF-8",
             null
         )
+        isContentLoaded = true
     }
 
     /**
@@ -220,7 +239,7 @@ class PaginatedEpubWebView(context: Context) : WebView(context) {
         stopLoading()
         clearCache(true)
         clearHistory()
-        removeAllViews()
-        destroy()
+        loadUrl("about:blank")
+        isContentLoaded = false
     }
 }
