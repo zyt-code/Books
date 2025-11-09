@@ -93,6 +93,9 @@ dependencies {
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.8.0")
 
+    // ViewPager2 for smooth page turning
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
+
     // Hilt
     implementation("com.google.dagger:hilt-android:2.50")
     ksp("com.google.dagger:hilt-compiler:2.50")

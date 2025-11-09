@@ -1,5 +1,6 @@
 package com.androidbooks.presentation.reader
 
+import com.androidbooks.data.epub.ChapterContent
 import com.androidbooks.data.epub.SpineItem
 import com.androidbooks.data.epub.TocEntry
 import com.androidbooks.data.local.datastore.UserPreferences
@@ -9,6 +10,7 @@ data class ReaderUiState(
     val bookTitle: String = "",
     val currentSpineIndex: Int = 0,
     val spineItems: List<SpineItem> = emptyList(),
+    val chapterContents: List<ChapterContent> = emptyList(),
     val toc: List<TocEntry> = emptyList(),
     val userPreferences: UserPreferences = UserPreferences.getDefaultInstance(),
     val isMenuVisible: Boolean = false,
@@ -31,4 +33,5 @@ sealed class ReaderEvent {
     data class UpdateFontSize(val size: Float) : ReaderEvent()
     data class UpdateLineHeight(val height: Float) : ReaderEvent()
     data class UpdateThemeMode(val mode: UserPreferences.ThemeMode) : ReaderEvent()
+    data class OnPageChanged(val newIndex: Int) : ReaderEvent()
 }

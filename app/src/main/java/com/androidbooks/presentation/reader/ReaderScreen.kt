@@ -49,19 +49,35 @@ fun ReaderScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         if (uiState.isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else if (uiState.error != null) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "加载失败",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = uiState.error ?: "Unknown error",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         } else {
-            val currentSpineItem = uiState.spineItems.getOrNull(uiState.currentSpineIndex)
             val bookDir = File(context.filesDir, "books/$bookId")
 
-            EpubWebView(
-                spineItem = currentSpineItem,
+            // Use PaginatedReader with ViewPager2
+            PaginatedReader(
+                chapters = uiState.chapterContents,
+                currentChapterIndex = uiState.currentSpineIndex,
                 bookDir = bookDir,
                 userPreferences = uiState.userPreferences,
-                currentSpineIndex = uiState.currentSpineIndex,
-                onProgressUpdate = { offset ->
-                    viewModel.onEvent(
-                        ReaderEvent.UpdateProgress(uiState.currentSpineIndex, offset)
-                    )
+                onPageChanged = { newIndex ->
+                    viewModel.onEvent(ReaderEvent.OnPageChanged(newIndex))
                 },
                 modifier = Modifier.fillMaxSize()
             )
