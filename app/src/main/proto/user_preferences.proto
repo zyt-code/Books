@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option java_package = "com.androidbooks.data.local.datastore";
+option java_multiple_files = true;
+
+message UserPreferences {
+  string font_family = 1;
+  float font_size = 2;
+  float line_height = 3;
+  ThemeMode theme_mode = 4;
+  float brightness = 5;
+
+  enum ThemeMode {
+    DAY = 0;
+    NIGHT = 1;
+    SEPIA = 2;
+  }
+}

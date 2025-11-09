@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AndroidBooks</string>
+    <string name="bookshelf_title">书架</string>
+    <string name="add_book">添加书籍</string>
+    <string name="import_epub">导入 EPUB</string>
+    <string name="no_books">还没有书籍\n点击 + 添加您的第一本书</string>
+    <string name="sort_by_title">按标题排序</string>
+    <string name="sort_by_author">按作者排序</string>
+    <string name="sort_by_recent">按最近阅读排序</string>
+    <string name="delete">删除</string>
+    <string name="rename">重命名</string>
+    <string name="book_details">书籍详情</string>
+
+    <!-- Reader -->
+    <string name="chapter">章节</string>
+    <string name="table_of_contents">目录</string>
+    <string name="settings">设置</string>
+    <string name="font_size">字体大小</string>
+    <string name="line_height">行高</string>
+    <string name="font_family">字体</string>
+    <string name="theme">主题</string>
+    <string name="theme_day">日间</string>
+    <string name="theme_night">夜间</string>
+    <string name="theme_sepia">护眼</string>
+    <string name="bookmarks">书签</string>
+    <string name="add_bookmark">添加书签</string>
+    <string name="highlights">高亮</string>
+    <string name="add_note">添加笔记</string>
+    <string name="search">搜索</string>
+
+    <!-- Common -->
+    <string name="cancel">取消</string>
+    <string name="confirm">确认</string>
+    <string name="save">保存</string>
+    <string name="loading">加载中…</string>
+    <string name="error">错误</string>
+    <string name="unknown_author">未知作者</string>
+</resources>

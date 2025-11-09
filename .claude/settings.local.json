@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(curl:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(find:*)",
+      "Bash(gradle-temp/gradle-8.4/bin/gradle wrapper:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
